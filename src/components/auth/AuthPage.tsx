@@ -124,16 +124,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     return (
       <div className="min-h-screen bg-[#070a11] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
         {/* Top Announcement Bar */}
-        <div className="bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border-b border-slate-800/80 text-slate-300 text-xs font-medium py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
-          <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">
-            Latest Update
+        <div className="bg-gradient-to-r from-blue-950/80 via-[#0e162b] to-indigo-950/80 border-b border-blue-500/20 text-slate-200 text-xs font-medium py-2.5 px-4 text-center flex items-center justify-center gap-2 relative z-50">
+          <span className="bg-[#2563EB] text-white px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md shadow-blue-600/30">
+            LATEST UPDATE
           </span>
           <span className="hidden sm:inline">
-            Official TOPIK Previous Question Papers and Timed Online Mock Tests are live.
+            Official 102nd & 96th TOPIK Previous Question Papers and Timed Online Mock Tests are live!
           </span>
           <button
-            onClick={() => handleFeatureClick("pyq_hub", "TOPIK Past Papers")}
-            className="text-white hover:text-indigo-300 font-bold ml-1 flex items-center gap-1 cursor-pointer underline"
+            onClick={() => handleFeatureClick("pyq_hub", "102nd TOPIK Past Papers")}
+            className="text-white hover:text-blue-300 font-bold ml-1 flex items-center gap-1 cursor-pointer underline"
           >
             <span>Practice Free</span>
             <ArrowRight className="w-3 h-3" />
