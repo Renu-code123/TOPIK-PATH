@@ -124,15 +124,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     return (
       <div className="min-h-screen bg-[#070a11] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
         {/* Top Announcement Bar */}
-        <div className="bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 border-b border-indigo-500/20 text-slate-200 text-xs font-medium py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
-          <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">
-            🌸 102nd TOPIK
+        <div className="bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border-b border-slate-800/80 text-slate-300 text-xs font-medium py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
+          <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">
+            Latest Update
           </span>
           <span className="hidden sm:inline">
-            Official 102nd & 96th TOPIK Previous Question Papers & Timed Mocks are live!
+            Official TOPIK Previous Question Papers and Timed Online Mock Tests are live.
           </span>
           <button
-            onClick={() => handleFeatureClick("pyq_hub", "102nd TOPIK Exam Sets")}
+            onClick={() => handleFeatureClick("pyq_hub", "TOPIK Past Papers")}
             className="text-white hover:text-indigo-300 font-bold ml-1 flex items-center gap-1 cursor-pointer underline"
           >
             <span>Practice Free</span>
@@ -148,27 +148,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               <MascotLogo size="md" showTagline={true} />
             </div>
 
-            {/* Navigation Links */}
+            {/* Clean Navigation Links without Emojis and Numbers */}
             <div className="hidden lg:flex items-center gap-1 bg-slate-900/60 border border-slate-800/80 p-1 rounded-2xl">
               {[
-                { label: "Vocabulary", badge: "4.3k", icon: "📚", section: "vocab" as ActiveSection },
-                { label: "Flashcards", badge: "SM-2", icon: "🎴", section: "flashcards" as ActiveSection },
-                { label: "PYQs & Mocks", badge: "102nd", icon: "📝", section: "pyq_hub" as ActiveSection },
-                { label: "Writing Lab", badge: "51-54", icon: "✍️", section: "writing" as ActiveSection },
-                { label: "Grammar Bank", icon: "📘", section: "grammar" as ActiveSection },
+                { label: "Vocabulary", section: "vocab" as ActiveSection },
+                { label: "Flashcards", section: "flashcards" as ActiveSection },
+                { label: "PYQs & Mocks", section: "pyq_hub" as ActiveSection },
+                { label: "Writing Lab", section: "writing" as ActiveSection },
+                { label: "Grammar Bank", section: "grammar" as ActiveSection },
               ].map((item) => (
                 <button
                   key={item.label}
                   onClick={() => handleFeatureClick(item.section, item.label)}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
                 >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 font-bold">
-                      {item.badge}
-                    </span>
-                  )}
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -194,7 +188,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   setMode("signup");
                   setError("");
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-600/25 flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer"
               >
                 <span>Start Free</span>
                 <ArrowRight className="w-3.5 h-3.5" />
