@@ -1,0 +1,548 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Users & Auth ────────────────────────────────────────────────────────────
+
+model User {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  password        String
+  avatar          String?
+  role            String   @default("student") // student | admin
+  
+  // TOPIK goals
+  targetExam      String   @default("TOPIK_I")  // TOPIK_I | TOPIK_II | BOTH
+  targetLevel     Int      @default(2)           // 1-6
+  examDate        DateTime?
+  dailyGoalMins   Int      @default(60)
+  currentLevel    Int      @default(0)
+  
+  // Onboarding
+  onboardingDone  Boolean  @default(false)
+  
+  // Gamification
+  xp              Int      @default(0)
+  level           Int      @default(1)
+  streak          Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastStudyDate   DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  vocabProgress   UserVocabProgress[]
+  grammarProgress UserGrammarProgress[]
+  attempts        Attempt[]
+  mockTests       MockTestSession[]
+  dailyTasks      DailyTask[]
+  streakRecords   StreakRecord[]
+  bookmarks       Bookmark[]
+  achievements    UserAchievement[]
+  studyPlans      StudyPlan[]
+  writingSubmissions WritingSubmission[]
+  studyLogs       StudyLog[]
+
+  @@map("users")
+}
+
+// ─── Vocabulary ───────────────────────────────────────────────────────────────
+
+model Vocabulary {
+  id              String   @id @default(cuid())
+  originalNumber  Int
+  korean          String
+  english         String
+  romanization    String?
+  categoryId      String?
+  subcategoryId   String?
+  partOfSpeech    String?  // noun | verb | adjective | adverb | particle | etc
+  level           String   @default("TOPIK_I")  // TOPIK_I | TOPIK_II
+  topikLevel      Int      @default(1)           // 1 | 2 | 3 | 4 | 5 | 6
+  exampleSentence String?
+  exampleTranslation String?
+  difficulty      String   @default("EASY")     // EASY | MEDIUM | HARD
+  frequency       Int      @default(3)           // 1-5
+  tags            String?  // JSON array as string
+  audioUrl        String?
+  imageUrl        String?
+  
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  category        Category? @relation("VocabCategory", fields: [categoryId], references: [id])
+  subcategory     Category? @relation("VocabSubcategory", fields: [subcategoryId], references: [id])
+  userProgress    UserVocabProgress[]
+  bookmarks       Bookmark[]
+  questions       Question[]
+
+  @@map("vocabulary")
+  @@index([korean])
+  @@index([english])
+  @@index([level])
+  @@index([categoryId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  nameKorean  String?
+  emoji       String?
+  description String?
+  parentId    String?
+  level       String   @default("TOPIK_I")  // TOPIK_I | TOPIK_II | ALL
+  sortOrder   Int      @default(0)
+  
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  vocabulary  Vocabulary[] @relation("VocabCategory")
+  subvocab    Vocabulary[] @relation("VocabSubcategory")
+
+  @@map("categories")
+}
+
+// ─── Grammar ─────────────────────────────────────────────────────────────────
+
+model Grammar {
+  id              String   @id @default(cuid())
+  grammar         String   // e.g. "-고 싶다"
+  meaning         String
+  formation       String
+  usage           String?
+  level           String   @default("TOPIK_I")
+  topikLevel      Int      @default(1)
+  categoryId      String?
+  difficulty      String   @default("EASY")
+  examples        String   // JSON: [{korean, english}]
+  commonMistakes  String?
+  relatedGrammar  String?  // JSON array of grammar ids
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  
+  grammarCategory GrammarCategory? @relation(fields: [categoryId], references: [id])
+  userProgress    UserGrammarProgress[]
+  questions       Question[]
+  bookmarks       Bookmark[]
+
+  @@map("grammar")
+}
+
+model GrammarCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  emoji       String?
+  level       String   @default("TOPIK_I")
+  sortOrder   Int      @default(0)
+  
+  grammar     Grammar[]
+
+  @@map("grammar_categories")
+}
+
+// ─── Questions ────────────────────────────────────────────────────────────────
+
+model Question {
+  id              String   @id @default(cuid())
+  type            String   // MCQ_KO_EN | MCQ_EN_KO | FILL_BLANK | AUDIO | IMAGE | CATEGORY | GRAMMAR_SELECT | SENTENCE_ORDER | TRANSLATION
+  questionText    String
+  options         String   // JSON: [{id, text, isCorrect}]
+  correctAnswer   String   // option id
+  explanation     String?
+  explanationKo   String?
+  
+  // Content reference
+  vocabularyId    String?
+  grammarId       String?
+  
+  // Classification
+  exam            String   @default("TOPIK_I")      // TOPIK_I | TOPIK_II
+  section         String   @default("VOCABULARY")    // VOCABULARY | GRAMMAR | LISTENING | READING | WRITING
+  level           String   @default("TOPIK_I")
+  topikLevel      Int      @default(1)
+  difficulty      String   @default("EASY")
+  questionType    String?  // for exam blueprint mapping
+  
+  createdAt       DateTime @default(now())
+  
+  vocabulary      Vocabulary? @relation(fields: [vocabularyId], references: [id])
+  grammar         Grammar?    @relation(fields: [grammarId], references: [id])
+  attempts        Attempt[]
+  bookmarks       Bookmark[]
+
+  @@map("questions")
+  @@index([exam])
+  @@index([section])
+  @@index([difficulty])
+}
+
+// ─── User Progress ────────────────────────────────────────────────────────────
+
+model UserVocabProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  vocabId       String
+  
+  status        String   @default("NEW")  // NEW | LEARNING | FAMILIAR | STRONG | MASTERED
+  timesCorrect  Int      @default(0)
+  timesWrong    Int      @default(0)
+  timesSeen     Int      @default(0)
+  accuracy      Float    @default(0)
+  
+  // Spaced repetition (SM-2)
+  easinessFactor Float   @default(2.5)
+  interval       Int     @default(1)     // days
+  repetitions    Int     @default(0)
+  nextReview     DateTime @default(now())
+  lastReviewed   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary    Vocabulary @relation(fields: [vocabId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, vocabId])
+  @@map("user_vocab_progress")
+  @@index([userId])
+  @@index([nextReview])
+}
+
+model UserGrammarProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  grammarId     String
+  
+  status        String   @default("NEW")
+  timesCorrect  Int      @default(0)
+  timesWrong    Int      @default(0)
+  timesSeen     Int      @default(0)
+  accuracy      Float    @default(0)
+  
+  easinessFactor Float   @default(2.5)
+  interval       Int     @default(1)
+  repetitions    Int     @default(0)
+  nextReview     DateTime @default(now())
+  lastReviewed   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grammar       Grammar @relation(fields: [grammarId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, grammarId])
+  @@map("user_grammar_progress")
+}
+
+// ─── Attempts (question history) ─────────────────────────────────────────────
+
+model Attempt {
+  id              String   @id @default(cuid())
+  userId          String
+  questionId      String
+  selectedAnswer  String?
+  isCorrect       Boolean
+  timeTaken       Int?     // seconds
+  sessionId       String?  // links to MockTestSession
+  mode            String   @default("PRACTICE") // PRACTICE | MOCK | REVIEW | DAILY
+  
+  createdAt       DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("attempts")
+  @@index([userId])
+  @@index([isCorrect])
+  @@index([createdAt])
+}
+
+// ─── Mock Tests ───────────────────────────────────────────────────────────────
+
+model MockTestSession {
+  id            String   @id @default(cuid())
+  userId        String
+  
+  examType      String   // TOPIK_I | TOPIK_II
+  format        String   @default("PBT")  // PBT | IBT
+  mode          String   @default("FULL") // FULL | QUICK | MINI | CUSTOM
+  timeLimit     Int?     // total seconds
+  
+  status        String   @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED | ABANDONED
+  
+  // Scores
+  listeningScore  Int?
+  readingScore    Int?
+  writingScore    Int?
+  totalScore      Int?
+  maxScore        Int?
+  
+  // Section accuracy
+  listeningAccuracy Float?
+  readingAccuracy   Float?
+  writingAccuracy   Float?
+  
+  timeTaken     Int?     // seconds
+  completedAt   DateTime?
+  questionOrder String?  // JSON array of question ids
+  answers       String?  // JSON map questionId -> selectedAnswer
+  
+  startedAt     DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mock_test_sessions")
+  @@index([userId])
+}
+
+// ─── Daily Tasks ──────────────────────────────────────────────────────────────
+
+model DailyTask {
+  id          String   @id @default(cuid())
+  userId      String
+  date        String   // YYYY-MM-DD
+  
+  taskType    String   // VOCABULARY_LEARN | GRAMMAR_LEARN | PRACTICE_MCQ | REVIEW_WEAK | DAILY_CHALLENGE | MOCK_TEST
+  title       String
+  description String?
+  target      Int      @default(10)
+  completed   Int      @default(0)
+  isDone      Boolean  @default(false)
+  xpReward    Int      @default(20)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_tasks")
+  @@index([userId, date])
+}
+
+// ─── Streak ───────────────────────────────────────────────────────────────────
+
+model StreakRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String   // YYYY-MM-DD
+  xpEarned  Int      @default(0)
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, date])
+  @@map("streak_records")
+}
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────────
+
+model Bookmark {
+  id           String   @id @default(cuid())
+  userId       String
+  vocabularyId String?
+  grammarId    String?
+  questionId   String?
+  
+  createdAt    DateTime @default(now())
+  
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary   Vocabulary? @relation(fields: [vocabularyId], references: [id])
+  grammar      Grammar?    @relation(fields: [grammarId], references: [id])
+  question     Question?   @relation(fields: [questionId], references: [id])
+
+  @@map("bookmarks")
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────────
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String   // emoji or icon name
+  category    String   // STREAK | VOCABULARY | GRAMMAR | QUIZ | TEST | SPECIAL
+  condition   String   // JSON: {type, threshold}
+  xpReward    Int      @default(50)
+  
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ─── Exam Blueprints ──────────────────────────────────────────────────────────
+
+model ExamBlueprint {
+  id            String   @id @default(cuid())
+  examType      String   // TOPIK_I | TOPIK_II
+  format        String   // PBT | IBT
+  section       String   // LISTENING | READING | WRITING
+  questionCount Int
+  maxScore      Int
+  timeLimit     Int?     // minutes
+  levelRange    String   // "1-2" | "3-6"
+  questionTypes String   // JSON array
+  
+  @@map("exam_blueprints")
+  @@unique([examType, format, section])
+}
+
+// ─── Study Plans ──────────────────────────────────────────────────────────────
+
+model StudyPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  targetExam    String
+  targetLevel   Int
+  examDate      DateTime?
+  dailyMins     Int      @default(60)
+  weeklyPlan    String   // JSON
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("study_plans")
+}
+
+// ─── Writing Submissions ──────────────────────────────────────────────────────
+
+model WritingSubmission {
+  id          String   @id @default(cuid())
+  userId      String
+  taskNumber  Int      // 51 | 52 | 53 | 54
+  prompt      String
+  content     String
+  charCount   Int
+  
+  // Scores (AI/rule-based)
+  taskScore   Int?
+  orgScore    Int?
+  langScore   Int?
+  totalScore  Int?
+  maxScore    Int?
+  feedback    String?  // JSON
+  
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("writing_submissions")
+}
+
+// ─── Study Logs (for analytics) ───────────────────────────────────────────────
+
+model StudyLog {
+  id          String   @id @default(cuid())
+  userId      String
+  date        String   // YYYY-MM-DD
+  activity    String   // VOCABULARY | GRAMMAR | PRACTICE | MOCK_TEST | REVIEW | WRITING
+  duration    Int      @default(0) // seconds
+  xpEarned    Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("study_logs")
+  @@index([userId, date])
+}
+
+// ─── External Resources & PYQ / Mock Attempts ─────────────────────────────────
+
+model ExternalResource {
+  id            String   @id @default(cuid())
+  provider      String   @default("TOPIK_GUIDE") // TOPIK_GUIDE | OFFICIAL_TOPIK | OTHER
+  providerName  String   @default("TOPIK GUIDE")
+  title         String
+  description   String?
+  examType      String   // TOPIK_I | TOPIK_II
+  examNumber    Int      // e.g. 96, 91, 83, 64, 60, 52, 47, 41, 37, 36, 35
+  year          Int      // e.g. 2025, 2024, 2023, 2019
+  format        String   @default("NEW_FORMAT") // NEW_FORMAT | OLD_FORMAT
+  resourceType  String   // PREVIOUS_PAPER | MOCK_TEST
+  section       String   @default("FULL") // FULL | LISTENING | READING | WRITING
+  externalUrl   String
+  available     Boolean  @default(true)
+  paperPdfUrl   String?
+  audioUrl      String?
+  answerKeyUrl  String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  attempts      ExternalAttempt[]
+
+  @@map("external_resources")
+  @@index([examType, examNumber])
+  @@index([resourceType])
+}
+
+model ExternalAttempt {
+  id                  String    @id @default(cuid())
+  userId              String
+  resourceId          String
+  resourceProvider    String    @default("TOPIK_GUIDE")
+  providerName        String    @default("TOPIK GUIDE")
+  examType            String    // TOPIK_I | TOPIK_II
+  examNumber          Int
+  year                Int
+  level               String    @default("TOPIK_I")
+  format              String    @default("NEW_FORMAT")
+  attemptNumber       Int       @default(1)
+  
+  attemptDate         String    // YYYY-MM-DD
+  startedAt           DateTime  @default(now())
+  completedAt         DateTime?
+  
+  listeningScore      Int?      // 0 - 100
+  readingScore        Int?      // 0 - 100
+  writingScore        Int?      // 0 - 100 (for TOPIK II)
+  totalScore          Int       // 0 - 200 (TOPIK I) or 0 - 300 (TOPIK II)
+  maxScore            Int       @default(200)
+  
+  writingScoreSource  String?   // SELF | TEACHER | AI | EXTERNAL
+  
+  listeningCorrect    Int?
+  listeningTotal      Int?      @default(30) // or 50
+  readingCorrect      Int?
+  readingTotal        Int?      @default(40) // or 50
+  
+  timeTakenMinutes    Int?
+  status              String    @default("COMPLETED") // IN_PROGRESS | COMPLETED | ABANDONED
+  notes               String?
+  resultSource        String    @default("MANUAL") // MANUAL | EXTERNAL_API | IMPORTED
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  resource            ExternalResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@map("external_attempts")
+  @@index([userId, examType])
+  @@index([userId, attemptDate])
+}
+
