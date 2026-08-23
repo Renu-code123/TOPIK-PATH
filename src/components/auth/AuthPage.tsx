@@ -103,10 +103,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         {/* ── TOP ANNOUNCEMENT BANNER ── */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
           <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-            🌸 NEW 2026 RELEASE
+            🌸 LATEST RELEASE
           </span>
           <span className="hidden sm:inline">
-            Official 96th TOPIK Previous Papers & Timed Online Mock Tests are now live!
+            Official 102nd & 96th TOPIK Previous Papers & Timed Online Mock Tests (TOPIK I & II) are live!
           </span>
           <button
             onClick={() => setMode("signup")}
@@ -519,12 +519,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </h4>
                 <ul className="space-y-2.5">
                   {[
+                    { label: "102nd TOPIK Past Papers", badge: "Latest" },
                     { label: "96th TOPIK Past Papers", badge: "2025" },
                     { label: "91st TOPIK Past Papers" },
                     { label: "83rd TOPIK Past Papers" },
                     { label: "Timed Online Mock Tests" },
                     { label: "Score Progression Graphs" },
-                    { label: "Weak Area Diagnostics" },
                   ].map((link) => (
                     <li key={link.label}>
                       <button
