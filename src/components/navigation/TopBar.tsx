@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Flame, Zap, CheckCircle2, Menu, LogOut, User } from "lucide-react";
+import { Flame, Zap, CheckCircle2, Menu, LogOut, Globe, Sparkles } from "lucide-react";
 import { getLevelFromXp, getNextLevelProgress } from "@/lib/xp";
 import { MascotLogo } from "../brand/MascotLogo";
 
@@ -14,6 +14,7 @@ interface TopBarProps {
   onOpenMobileMenu?: () => void;
   userName?: string;
   onLogout?: () => void;
+  onGoToHome?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -25,6 +26,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenMobileMenu,
   userName,
   onLogout,
+  onGoToHome,
 }) => {
   const currentTier = getLevelFromXp(xp);
   const nextProgress = getNextLevelProgress(xp);
@@ -36,12 +38,12 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
-          className="lg:hidden p-2 rounded-xl bg-slate-800/80 text-slate-300 hover:text-white"
+          className="lg:hidden p-2 rounded-xl bg-slate-800/80 text-slate-300 hover:text-white cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="lg:hidden">
+        <div className="lg:hidden cursor-pointer" onClick={onGoToHome}>
           <MascotLogo size="sm" showTagline={false} />
         </div>
 
@@ -55,7 +57,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               key={t.id}
               onClick={() => onSelectTarget(t.id as any)}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 selectedTarget === t.id
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-slate-200"
@@ -65,6 +67,18 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Quick Go to Homepage Button */}
+        {onGoToHome && (
+          <button
+            onClick={onGoToHome}
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+            title="Preview public homepage"
+          >
+            <Globe className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Homepage</span>
+          </button>
+        )}
       </div>
 
       {/* Gamification Badges + User Menu */}
@@ -103,25 +117,43 @@ export const TopBar: React.FC<TopBarProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-indigo-500/50 text-xs font-bold text-slate-300 hover:text-white transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700 hover:border-indigo-500/50 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
             >
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <span className="hidden sm:inline max-w-[80px] truncate">{userName}</span>
             </button>
+
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 w-44 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in">
                 <div className="px-3 py-2 border-b border-slate-800 mb-1">
                   <div className="text-xs font-bold text-white truncate">{userName}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5">Signed in</div>
                 </div>
+
+                {onGoToHome && (
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      onGoToHome();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all text-xs font-semibold cursor-pointer"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>View Homepage</span>
+                  </button>
+                )}
+
                 <button
-                  onClick={() => { setShowUserMenu(false); onLogout?.(); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/40 transition-all text-xs font-semibold"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onLogout?.();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-950/40 transition-all text-xs font-semibold cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  Log Out
+                  <span>Log Out</span>
                 </button>
               </div>
             )}

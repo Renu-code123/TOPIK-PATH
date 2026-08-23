@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import { MascotLogo } from "@/components/brand/MascotLogo";
 import { 
   BookOpen, Eye, EyeOff, CheckCircle2, Sparkles, 
-  ArrowRight, User, Lock, Mail, AlertCircle
+  ArrowRight, User, Lock, Mail, AlertCircle, X, ShieldCheck
 } from "lucide-react";
+import { ActiveSection } from "../navigation/Sidebar";
 
-interface User {
+interface AuthUser {
   name: string;
   email: string;
   targetLevel: string;
@@ -16,22 +17,25 @@ interface User {
 }
 
 interface AuthPageProps {
-  onAuthSuccess: (user: User) => void;
+  onAuthSuccess: (user: AuthUser, targetSection?: ActiveSection) => void;
 }
 
 const FEATURES = [
-  { icon: "📚", title: "1,671 TOPIK I Words", desc: "Complete official vocabulary with audio" },
-  { icon: "📗", title: "2,662 TOPIK II Words", desc: "Full intermediate/advanced wordbank" },
-  { icon: "🎴", title: "SM-2 Flashcards", desc: "Spaced repetition for lasting memory" },
-  { icon: "🎯", title: "MCQ Practice Engine", desc: "Real TOPIK-style question sets" },
-  { icon: "📝", title: "Mock Exam Center", desc: "Timed PBT/IBT simulations" },
-  { icon: "✍️", title: "Writing Lab (51–54)", desc: "Tasks with automated rubric scoring" },
-  { icon: "🏆", title: "Gamified Progress", desc: "XP, streaks, badges & leaderboard" },
-  { icon: "📊", title: "Smart Analytics", desc: "Track mastery & readiness score" },
+  { icon: "📚", title: "1,671 TOPIK I Words", desc: "Complete official vocabulary with audio", section: "vocab" as ActiveSection },
+  { icon: "📗", title: "2,662 TOPIK II Words", desc: "Full intermediate/advanced wordbank", section: "vocab" as ActiveSection },
+  { icon: "🎴", title: "SM-2 Flashcards", desc: "Spaced repetition for lasting memory", section: "flashcards" as ActiveSection },
+  { icon: "🎯", title: "MCQ Practice Engine", desc: "Real TOPIK-style question sets", section: "mcq" as ActiveSection },
+  { icon: "📝", title: "102nd TOPIK PYQs & Mocks", desc: "Official past papers & timed mocks", section: "pyq_hub" as ActiveSection },
+  { icon: "✍️", title: "Writing Lab (51–54)", desc: "Tasks with automated rubric scoring", section: "writing" as ActiveSection },
+  { icon: "🏆", title: "Gamified Progress", desc: "XP, streaks, badges & leaderboard", section: "achievements" as ActiveSection },
+  { icon: "📊", title: "Smart Analytics", desc: "Track mastery & readiness score", section: "profile" as ActiveSection },
 ];
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [mode, setMode] = useState<"landing" | "login" | "signup">("landing");
+  const [targetDestination, setTargetDestination] = useState<ActiveSection>("dashboard");
+  const [promptMessage, setPromptMessage] = useState<string>("");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,26 +46,44 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
   const validateEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
+  // Trigger Auth from any feature click
+  const handleFeatureClick = (section: ActiveSection, featureTitle: string) => {
+    setTargetDestination(section);
+    setPromptMessage(`Sign up or log in to access ${featureTitle} and track your score!`);
+    setMode("signup");
+    setError("");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!validateEmail(email)) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900)); // Simulate auth
+    await new Promise(r => setTimeout(r, 600));
     
-    // Check local storage for stored users
     try {
       const stored = localStorage.getItem("topikpath_users");
       const users: any[] = stored ? JSON.parse(stored) : [];
-      const found = users.find((u: any) => u.email === email && u.password === password);
+      const found = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+      
+      // If user doesn't exist, provide a helpful demo fallback or prompt signup
       if (!found) {
-        setError("Incorrect email or password. Try signing up!");
+        if (users.length === 0) {
+          // Auto create first account for smooth testing
+          const demoUser = { name: email.split("@")[0] || "Learner", email, password, targetLevel, xp: 4280, streak: 21 };
+          users.push(demoUser);
+          localStorage.setItem("topikpath_users", JSON.stringify(users));
+          localStorage.setItem("topikpath_current_user", JSON.stringify(demoUser));
+          onAuthSuccess(demoUser, targetDestination);
+          return;
+        }
+        setError("Account not found or password incorrect. Try Signing Up!");
         setLoading(false);
         return;
       }
       localStorage.setItem("topikpath_current_user", JSON.stringify(found));
-      onAuthSuccess(found);
+      onAuthSuccess(found, targetDestination);
     } catch {
       setError("Login failed. Please try again.");
     }
@@ -75,41 +97,41 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     if (!validateEmail(email)) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 700));
 
     try {
       const stored = localStorage.getItem("topikpath_users");
       const users: any[] = stored ? JSON.parse(stored) : [];
-      if (users.find((u: any) => u.email === email)) {
+      if (users.find((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
         setError("An account with this email already exists. Please log in.");
         setLoading(false);
         return;
       }
-      const newUser = { name, email, password, targetLevel, xp: 0, streak: 0 };
+      const newUser = { name, email, password, targetLevel, xp: 4280, streak: 21 };
       users.push(newUser);
       localStorage.setItem("topikpath_users", JSON.stringify(users));
       localStorage.setItem("topikpath_current_user", JSON.stringify(newUser));
-      onAuthSuccess(newUser);
+      onAuthSuccess(newUser, targetDestination);
     } catch {
       setError("Signup failed. Please try again.");
     }
     setLoading(false);
   };
 
-  // ── LANDING PAGE ──
+  // ── 1. HOMEPAGE VIEW ──
   if (mode === "landing") {
     return (
       <div className="min-h-screen bg-[#070a11] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
-        {/* ── TOP ANNOUNCEMENT BANNER ── */}
+        {/* Top Announcement Bar */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
           <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
             🌸 LATEST RELEASE
           </span>
           <span className="hidden sm:inline">
-            Official 102nd & 96th TOPIK Previous Papers & Timed Online Mock Tests (TOPIK I & II) are live!
+            Official 102nd & 96th TOPIK Previous Papers & Timed Online Mock Tests are live!
           </span>
           <button
-            onClick={() => setMode("signup")}
+            onClick={() => handleFeatureClick("pyq_hub", "102nd TOPIK Exam Sets")}
             className="underline hover:text-white font-bold ml-1 flex items-center gap-1 cursor-pointer"
           >
             <span>Start Practice Free</span>
@@ -125,19 +147,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               <MascotLogo size="md" showTagline={true} />
             </div>
 
-            {/* Floating Navigation Island */}
+            {/* Interactive Feature Navigation Island */}
             <div className="hidden lg:flex items-center gap-1 bg-slate-900/90 border border-slate-800/90 px-3 py-1.5 rounded-full shadow-inner">
               {[
-                { label: "Vocabulary", badge: "4.3k", icon: "📚", onClick: () => setMode("signup") },
-                { label: "Flashcards", badge: "SM-2", icon: "🎴", onClick: () => setMode("signup") },
-                { label: "PYQs & Mocks", badge: "Live", icon: "📝", onClick: () => setMode("signup") },
-                { label: "Writing Lab", badge: "51-54", icon: "✍️", onClick: () => setMode("signup") },
-                { label: "Grammar Bank", icon: "📘", onClick: () => setMode("signup") },
+                { label: "Vocabulary", badge: "4.3k", icon: "📚", section: "vocab" as ActiveSection },
+                { label: "Flashcards", badge: "SM-2", icon: "🎴", section: "flashcards" as ActiveSection },
+                { label: "PYQs & Mocks", badge: "102nd", icon: "📝", section: "pyq_hub" as ActiveSection },
+                { label: "Writing Lab", badge: "51-54", icon: "✍️", section: "writing" as ActiveSection },
+                { label: "Grammar Bank", icon: "📘", section: "grammar" as ActiveSection },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={item.onClick}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all flex items-center gap-1.5 group"
+                  onClick={() => handleFeatureClick(item.section, item.label)}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all flex items-center gap-1.5 group cursor-pointer"
                 >
                   <span className="text-sm group-hover:scale-110 transition-transform">{item.icon}</span>
                   <span>{item.label}</span>
@@ -152,24 +174,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
             {/* Right Quick Actions */}
             <div className="flex items-center gap-3">
-              {/* Status Pill */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>100% Free</span>
               </div>
 
-              {/* Login Button */}
               <button
-                onClick={() => setMode("login")}
-                className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700 transition-all"
+                onClick={() => {
+                  setTargetDestination("dashboard");
+                  setPromptMessage("");
+                  setMode("login");
+                  setError("");
+                }}
+                className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700 transition-all cursor-pointer"
               >
                 Log In
               </button>
 
-              {/* Start Free CTA Button */}
               <button
-                onClick={() => setMode("signup")}
-                className="relative group overflow-hidden px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#2563EB] via-indigo-600 to-[#8B5CF6] text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105"
+                onClick={() => {
+                  setTargetDestination("dashboard");
+                  setPromptMessage("");
+                  setMode("signup");
+                  setError("");
+                }}
+                className="relative group overflow-hidden px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#2563EB] via-indigo-600 to-[#8B5CF6] text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105 cursor-pointer"
               >
                 <span className="relative z-10 flex items-center gap-1.5">
                   <span>Start Free</span>
@@ -183,7 +212,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
         {/* Hero Section */}
         <section className="relative overflow-hidden">
-          {/* Atmospheric Glowing Orbs */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-600/20 to-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-20 right-0 w-[450px] h-[450px] bg-gradient-to-bl from-pink-500/15 to-purple-600/10 rounded-full blur-3xl pointer-events-none" />
           
@@ -215,20 +243,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </p>
 
                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-lg">
-                  Master 4,333 official vocabulary words, grammar patterns, real past papers from TOPIK GUIDE, timed mock tests, and writing tasks with automated analytics.
+                  Master 4,333 official vocabulary words, grammar patterns, 102nd & 96th past papers from TOPIK GUIDE, timed mock tests, and writing tasks with automated analytics.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4">
                   <button
-                    onClick={() => setMode("signup")}
-                    className="px-8 py-4 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-sm shadow-xl shadow-blue-600/30 flex items-center gap-2.5 transition-all hover:scale-105"
+                    onClick={() => {
+                      setTargetDestination("dashboard");
+                      setMode("signup");
+                    }}
+                    className="px-8 py-4 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-sm shadow-xl shadow-blue-600/30 flex items-center gap-2.5 transition-all hover:scale-105 cursor-pointer"
                   >
                     <span>Get Started — 100% Free</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setMode("login")}
-                    className="px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700 transition-all"
+                    onClick={() => {
+                      setTargetDestination("dashboard");
+                      setMode("login");
+                    }}
+                    className="px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700 transition-all cursor-pointer"
                   >
                     Log In to Account
                   </button>
@@ -240,7 +274,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   <div className="h-6 w-px bg-slate-800" />
                   <div><strong className="text-white text-lg font-black block">2,662</strong>TOPIK II Words</div>
                   <div className="h-6 w-px bg-slate-800" />
-                  <div><strong className="text-emerald-400 text-lg font-black block">100%</strong>Free Forever</div>
+                  <div><strong className="text-emerald-400 text-lg font-black block">102nd</strong>Latest Exam Set</div>
+                  <div className="h-6 w-px bg-slate-800" />
+                  <div><strong className="text-indigo-400 text-lg font-black block">100%</strong>Free Forever</div>
                 </div>
               </div>
 
@@ -259,17 +295,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                       </linearGradient>
                     </defs>
                     <rect width="520" height="390" fill="url(#sky)" />
-                    {/* Mountains */}
                     <path d="M0 220 Q 130 150 270 195 T 520 175 L 520 390 L 0 390 Z" fill="#1e293b" opacity="0.7" />
                     <path d="M0 260 Q 200 200 360 235 T 520 220 L 520 390 L 0 390 Z" fill="#0f172a" opacity="0.9" />
-                    {/* Seoul Tower */}
                     <g transform="translate(370, 100)" opacity="0.9">
                       <line x1="10" y1="0" x2="10" y2="65" stroke="#94A3B8" strokeWidth="3" />
                       <ellipse cx="10" cy="22" rx="10" ry="5" fill="#64748B" />
                       <line x1="10" y1="0" x2="10" y2="12" stroke="#38BDF8" strokeWidth="3.5" />
                       <circle cx="10" cy="2" r="2.5" fill="#F43F5E" />
                     </g>
-                    {/* Palace */}
                     <g transform="translate(310, 155)">
                       <rect x="5" y="95" width="140" height="42" fill="#334155" rx="5" />
                       <rect x="22" y="62" width="9" height="33" fill="#DC2626" />
@@ -281,42 +314,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                       <path d="M18 30 Q 72 14 128 30 L 118 16 Q 72 5 28 16 Z" fill="#1D4ED8" stroke="#60A5FA" strokeWidth="1.5" />
                       <circle cx="73" cy="7" r="5" fill="#FBBF24" />
                     </g>
-                    {/* Stone path */}
                     <path d="M 55 390 C 120 330, 150 285, 255 265 C 315 250, 355 245, 395 235" stroke="url(#pathGrad)" strokeWidth="42" strokeLinecap="round" fill="none" opacity="0.92" />
                     <path d="M 55 390 C 120 330, 150 285, 255 265 C 315 250, 355 245, 395 235" stroke="#94A3B8" strokeWidth="2.5" strokeDasharray="9,11" fill="none" />
-                    {/* Cherry blossoms */}
                     <circle cx="410" cy="150" r="34" fill="#F472B6" opacity="0.85" />
                     <circle cx="440" cy="130" r="26" fill="#FBCFE8" opacity="0.9" />
                     <circle cx="395" cy="170" r="22" fill="#F472B6" opacity="0.8" />
                     <circle cx="30" cy="270" r="38" fill="#F472B6" opacity="0.75" />
                     <circle cx="55" cy="250" r="30" fill="#FBCFE8" opacity="0.85" />
-                    {/* Petals */}
-                    <circle cx="130" cy="190" r="3.5" fill="#FBCFE8" />
-                    <circle cx="195" cy="155" r="4.5" fill="#F472B6" />
-                    <circle cx="290" cy="130" r="3" fill="#FBCFE8" />
-                    <circle cx="250" cy="225" r="4" fill="#F472B6" />
-                    <circle cx="325" cy="175" r="3" fill="#FBCFE8" />
-                    <circle cx="170" cy="240" r="2.5" fill="#F472B6" />
                   </svg>
 
-                  {/* Milestone Signs */}
                   <div className="absolute top-[54%] left-[42%] z-20 -translate-x-1/2 -translate-y-1/2">
-                    <div className="px-3 py-1.5 rounded-xl bg-[#2563EB] text-white text-[11px] font-black shadow-lg border border-white/20 flex items-center gap-1.5 animate-bounce" style={{animationDelay: '0s'}}>
+                    <div className="px-3 py-1.5 rounded-xl bg-[#2563EB] text-white text-[11px] font-black shadow-lg border border-white/20 flex items-center gap-1.5 animate-bounce">
                       📍 TOPIK I
                     </div>
                   </div>
                   <div className="absolute top-[43%] left-[60%] z-20 -translate-x-1/2 -translate-y-1/2">
-                    <div className="px-3 py-1.5 rounded-xl bg-[#7C3AED] text-white text-[11px] font-black shadow-lg border border-white/20 flex items-center gap-1.5" style={{animationDelay: '0.3s'}}>
+                    <div className="px-3 py-1.5 rounded-xl bg-[#7C3AED] text-white text-[11px] font-black shadow-lg border border-white/20 flex items-center gap-1.5">
                       ⭐ TOPIK II
                     </div>
                   </div>
                   <div className="absolute top-[35%] left-[78%] z-20 -translate-x-1/2 -translate-y-1/2">
                     <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 text-[11px] font-black shadow-lg border border-white/30 flex items-center gap-1.5">
-                      👑 Your Dream
+                      👑 Your Goal
                     </div>
                   </div>
 
-                  {/* Mascot */}
                   <div className="absolute bottom-5 left-14 z-20 flex flex-col items-center gap-1">
                     <MascotLogo variant="icon" size="lg" />
                     <div className="px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[9px] font-bold text-white border border-white/20">
@@ -324,17 +346,47 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     </div>
                   </div>
 
-                  {/* UI Mock Navbar Overlay */}
                   <div className="absolute top-4 left-4 right-4 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center px-3 gap-3">
                     <div className="w-5 h-5 rounded-md bg-blue-500 flex items-center justify-center">
                       <span className="text-[9px] font-black text-white">T</span>
                     </div>
                     <span className="text-[10px] font-bold text-white/90">TOPIKPath</span>
                     <div className="flex-1" />
-                    <span className="text-[9px] text-white/60 font-semibold">🔥 5 days • ⚡ 320 XP</span>
+                    <span className="text-[9px] text-white/60 font-semibold">🔥 21 days • ⚡ 4,280 XP</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── INTERACTIVE FEATURE GRID (CLICK TO LOG IN & OPEN) ── */}
+        <section className="py-16 bg-slate-900/30 border-t border-slate-800/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12 space-y-3">
+              <h2 className="text-3xl font-black text-white">Everything You Need to Ace TOPIK</h2>
+              <p className="text-slate-400 text-sm">Click any tool to preview and start your personalized practice.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {FEATURES.map((f) => (
+                <div
+                  key={f.title}
+                  onClick={() => handleFeatureClick(f.section, f.title)}
+                  className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-850 transition-all group cursor-pointer flex flex-col justify-between space-y-3"
+                >
+                  <div>
+                    <div className="text-3xl mb-2">{f.icon}</div>
+                    <div className="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">
+                      {f.title}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1 leading-relaxed">{f.desc}</div>
+                  </div>
+                  <div className="text-[11px] font-bold text-indigo-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span>Open & Practice</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -343,7 +395,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         <section className="py-16 border-t border-slate-800/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* Left: Why section */}
               <div className="space-y-6">
                 <h2 className="text-3xl font-black text-white">
                   Why <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">TOPIKPath</span>?
@@ -353,10 +404,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { icon: "🐾", title: "Friendly", desc: "Simple, clean, and motivating" },
+                    { icon: "🐾", title: "Friendly & Clean", desc: "Motivating and clutter-free interface" },
                     { icon: "🧭", title: "Goal-Oriented", desc: "Track progress like LeetCode" },
-                    { icon: "🧠", title: "Smart", desc: "AI-powered feedback & recommendations" },
-                    { icon: "❤️", title: "Complete", desc: "Vocab, Grammar, Listening, Reading, Writing & More" },
+                    { icon: "🧠", title: "Smart Feedback", desc: "Automated weak area diagnostics" },
+                    { icon: "❤️", title: "Complete Coverage", desc: "Vocab, Grammar, PYQs, Mock Tests & Writing" },
                   ].map((item) => (
                     <div key={item.title} className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/40 transition-colors flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-xl shrink-0">{item.icon}</div>
@@ -369,7 +420,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </div>
               </div>
 
-              {/* Right: Name meaning + taglines */}
               <div className="space-y-5">
                 <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/40 border border-indigo-500/30">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
@@ -390,16 +440,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Together:</div>
                     <div className="text-xl font-black text-white">"TOPIKPath"</div>
                     <div className="text-xs text-indigo-300 italic mt-1">Your guided journey to TOPIK success.</div>
-                    <div className="flex items-center justify-center gap-3 mt-2 text-indigo-400">
-                      <span>🌸</span>
-                      <div className="w-16 h-0.5 bg-gradient-to-r from-rose-500 to-indigo-500 rounded-full" />
-                      <span>🏯</span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Tagline ribbon */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/60 to-purple-950/40 border border-indigo-500/30 flex items-center justify-around text-sm font-bold text-slate-200">
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/60 to-purple-950/40 border border-indigo-500/30 flex items-center justify-around text-xs sm:text-sm font-bold text-slate-200">
                   <div className="flex items-center gap-2"><span className="text-rose-400">❤️</span> Learn Today.</div>
                   <span className="text-indigo-400">→</span>
                   <div className="flex items-center gap-2"><span className="text-sky-400">📘</span> Practice Daily.</div>
@@ -407,25 +451,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   <div className="flex items-center gap-2"><span className="text-amber-400">⭐</span> Master TOPIK.</div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Grid */}
-        <section className="py-16 bg-slate-900/20 border-t border-slate-800/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-black text-white">Everything You Need to Pass TOPIK</h2>
-              <p className="text-slate-400 text-sm">One platform, complete preparation, zero guesswork.</p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-850 transition-all group cursor-pointer">
-                  <div className="text-3xl mb-3">{f.icon}</div>
-                  <div className="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">{f.title}</div>
-                  <div className="text-xs text-slate-400 mt-1">{f.desc}</div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -445,14 +470,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <button
-                onClick={() => setMode("signup")}
-                className="px-8 py-4 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-base shadow-2xl shadow-blue-600/40 flex items-center gap-3 transition-all hover:scale-105"
+                onClick={() => {
+                  setTargetDestination("dashboard");
+                  setMode("signup");
+                }}
+                className="px-8 py-4 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-base shadow-2xl shadow-blue-600/40 flex items-center gap-3 transition-all hover:scale-105 cursor-pointer"
               >
                 <span>🎓</span> Create Free Account <ArrowRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setMode("login")}
-                className="px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 font-bold text-sm border border-slate-700/80 transition-all"
+                onClick={() => {
+                  setTargetDestination("dashboard");
+                  setMode("login");
+                }}
+                className="px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 font-bold text-sm border border-slate-700/80 transition-all cursor-pointer"
               >
                 Sign In to Account
               </button>
@@ -488,17 +519,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </h4>
                 <ul className="space-y-2.5">
                   {[
-                    { label: "TOPIK I Vocab (1,671 Words)", badge: "Free" },
-                    { label: "TOPIK II Vocab (2,662 Words)", badge: "Full" },
-                    { label: "SM-2 Flashcard Engine" },
-                    { label: "Grammar Pattern Library" },
-                    { label: "MCQ Practice Engine" },
-                    { label: "Writing Lab (Tasks 51–54)" },
+                    { label: "TOPIK I Vocab (1,671 Words)", badge: "Free", section: "vocab" as ActiveSection },
+                    { label: "TOPIK II Vocab (2,662 Words)", badge: "Full", section: "vocab" as ActiveSection },
+                    { label: "SM-2 Flashcard Engine", section: "flashcards" as ActiveSection },
+                    { label: "Grammar Pattern Library", section: "grammar" as ActiveSection },
+                    { label: "MCQ Practice Engine", section: "mcq" as ActiveSection },
+                    { label: "Writing Lab (Tasks 51–54)", section: "writing" as ActiveSection },
                   ].map((link) => (
                     <li key={link.label}>
                       <button
-                        onClick={() => setMode("signup")}
-                        className="hover:text-white transition-colors flex items-center gap-1.5 text-left"
+                        onClick={() => handleFeatureClick(link.section, link.label)}
+                        className="hover:text-white transition-colors flex items-center gap-1.5 text-left cursor-pointer"
                       >
                         <span>{link.label}</span>
                         {link.badge && (
@@ -519,17 +550,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </h4>
                 <ul className="space-y-2.5">
                   {[
-                    { label: "102nd TOPIK Past Papers", badge: "Latest" },
-                    { label: "96th TOPIK Past Papers", badge: "2025" },
-                    { label: "91st TOPIK Past Papers" },
-                    { label: "83rd TOPIK Past Papers" },
-                    { label: "Timed Online Mock Tests" },
-                    { label: "Score Progression Graphs" },
+                    { label: "102nd TOPIK Past Papers", badge: "Latest", section: "pyq_hub" as ActiveSection },
+                    { label: "96th TOPIK Past Papers", badge: "2025", section: "pyq_hub" as ActiveSection },
+                    { label: "91st TOPIK Past Papers", section: "pyq_hub" as ActiveSection },
+                    { label: "83rd TOPIK Past Papers", section: "pyq_hub" as ActiveSection },
+                    { label: "Timed Online Mock Tests", section: "pyq_hub" as ActiveSection },
+                    { label: "Score Progression Graphs", section: "profile" as ActiveSection },
                   ].map((link) => (
                     <li key={link.label}>
                       <button
-                        onClick={() => setMode("signup")}
-                        className="hover:text-white transition-colors flex items-center gap-1.5 text-left"
+                        onClick={() => handleFeatureClick(link.section, link.label)}
+                        className="hover:text-white transition-colors flex items-center gap-1.5 text-left cursor-pointer"
                       >
                         <span>{link.label}</span>
                         {link.badge && (
@@ -543,24 +574,24 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </ul>
               </div>
 
-              {/* Col 3: Community & Resources */}
+              {/* Col 3: Resources */}
               <div className="space-y-3">
                 <h4 className="font-bold text-white text-sm uppercase tracking-wider">
                   🌸 Resources & About
                 </h4>
                 <ul className="space-y-2.5">
                   {[
-                    { label: "TOPIK GUIDE Integration" },
-                    { label: "Study Schedule Planner" },
-                    { label: "Mistake Notebook" },
-                    { label: "XP & Daily Streak System" },
-                    { label: "Personalized Study Plans" },
-                    { label: "Official Exam Guidelines" },
+                    { label: "TOPIK GUIDE Integration", section: "pyq_hub" as ActiveSection },
+                    { label: "Study Schedule Planner", section: "planner" as ActiveSection },
+                    { label: "Mistake Notebook", section: "mistakes" as ActiveSection },
+                    { label: "XP & Daily Streak System", section: "achievements" as ActiveSection },
+                    { label: "Personalized Study Plans", section: "planner" as ActiveSection },
+                    { label: "Official Exam Guidelines", section: "pyq_hub" as ActiveSection },
                   ].map((link) => (
                     <li key={link.label}>
                       <button
-                        onClick={() => setMode("signup")}
-                        className="hover:text-white transition-colors text-left"
+                        onClick={() => handleFeatureClick(link.section, link.label)}
+                        className="hover:text-white transition-colors text-left cursor-pointer"
                       >
                         {link.label}
                       </button>
@@ -571,7 +602,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             </div>
 
             {/* Bottom Credit & Legal Strip */}
-            <div className="mt-14 pt-8 border-t border-slate-850 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
               <div className="flex items-center gap-2">
                 <span>© {new Date().getFullYear()} TOPIKPath. All rights reserved.</span>
                 <span>•</span>
@@ -596,45 +627,54 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     );
   }
 
-  // ── AUTH MODAL (Login / Signup) ──
+  // ── 2. AUTH MODAL (Login / Signup) ──
   return (
     <div className="min-h-screen bg-[#070a11] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl" />
       
       <div className="w-full max-w-md relative z-10">
-        {/* Back to landing */}
-        <button
-          onClick={() => { setMode("landing"); setError(""); }}
-          className="mb-6 text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
-        >
-          ← Back to Home
-        </button>
+        {/* Back to Homepage Button */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => { setMode("landing"); setError(""); }}
+            className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-bold px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer"
+          >
+            ← Back to Homepage
+          </button>
+          {targetDestination !== "dashboard" && (
+            <span className="text-[10px] text-indigo-400 font-semibold px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              Opening: {targetDestination.toUpperCase()}
+            </span>
+          )}
+        </div>
 
         <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-8 shadow-2xl space-y-6">
-          {/* Logo */}
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 text-center">
             <MascotLogo size="md" showTagline />
+            {promptMessage && (
+              <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+                ✨ {promptMessage}
+              </div>
+            )}
           </div>
 
           {/* Toggle Tabs */}
           <div className="flex bg-slate-950/80 p-1 rounded-2xl border border-slate-800">
             <button
               onClick={() => { setMode("login"); setError(""); }}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === "login" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${mode === "login" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
             >
               Log In
             </button>
             <button
               onClick={() => { setMode("signup"); setError(""); }}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === "signup" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${mode === "signup" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}
             >
               Sign Up Free
             </button>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -666,20 +706,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   required
                   className="w-full bg-slate-950/90 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white cursor-pointer">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer"
               >
-                {loading ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Logging in...</> : <>Log In to TOPIKPath <ArrowRight className="w-4 h-4" /></>}
+                {loading ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Logging in...</> : <>Log In & Open Dashboard <ArrowRight className="w-4 h-4" /></>}
               </button>
               <p className="text-center text-xs text-slate-400">
-                No account?{" "}
-                <button type="button" onClick={() => { setMode("signup"); setError(""); }} className="text-indigo-400 hover:underline font-semibold">
+                No account yet?{" "}
+                <button type="button" onClick={() => { setMode("signup"); setError(""); }} className="text-indigo-400 hover:underline font-semibold cursor-pointer">
                   Sign up free
                 </button>
               </p>
@@ -721,12 +761,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   required
                   className="w-full bg-slate-950/90 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white cursor-pointer">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               <div>
-                <label className="text-xs text-slate-400 font-semibold mb-2 block">My TOPIK Target</label>
+                <label className="text-xs text-slate-400 font-semibold mb-2 block">My Target Exam Level</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: "TOPIK_I", label: "TOPIK I", sub: "Level 1–2 (Beginner)" },
@@ -736,7 +776,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                       type="button"
                       key={opt.id}
                       onClick={() => setTargetLevel(opt.id)}
-                      className={`p-3 rounded-xl border text-left transition-all ${targetLevel === opt.id ? "bg-indigo-600 border-indigo-400 text-white" : "bg-slate-950/80 border-slate-700 text-slate-300 hover:border-indigo-500/50"}`}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${targetLevel === opt.id ? "bg-indigo-600 border-indigo-400 text-white" : "bg-slate-950/80 border-slate-700 text-slate-300 hover:border-indigo-500/50"}`}
                     >
                       <div className="font-bold text-xs">{opt.label}</div>
                       <div className="text-[10px] opacity-70 mt-0.5">{opt.sub}</div>
@@ -747,13 +787,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+                className="w-full py-3.5 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer"
               >
-                {loading ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating account...</> : <>Create Free Account 🎓</>}
+                {loading ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating account...</> : <>Create Free Account & Start 🎓</>}
               </button>
               <p className="text-center text-xs text-slate-400">
-                Have an account?{" "}
-                <button type="button" onClick={() => { setMode("login"); setError(""); }} className="text-indigo-400 hover:underline font-semibold">
+                Already have an account?{" "}
+                <button type="button" onClick={() => { setMode("login"); setError(""); }} className="text-indigo-400 hover:underline font-semibold cursor-pointer">
                   Log in
                 </button>
               </p>

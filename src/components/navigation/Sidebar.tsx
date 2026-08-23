@@ -52,6 +52,7 @@ interface SidebarProps {
   xp: number;
   streak: number;
   mistakesCount: number;
+  onGoToHome?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -60,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   xp,
   streak,
   mistakesCount,
+  onGoToHome,
 }) => {
   const navGroups: NavGroup[] = [
     {
@@ -76,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id: "pyq_hub",
           label: "📝 PYQs & Mock Tests",
           icon: FileCheck,
-          badge: "NEW",
+          badge: "102nd",
           badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30",
         },
         { id: "mock_tests", label: "In-App Mock Center", icon: Clock, badge: "PBT/IBT" },
@@ -116,7 +118,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-[#090d16] border-r border-slate-800/80 flex flex-col h-full shrink-0">
       {/* Brand Header with Mascot Logo */}
-      <div className="p-4 border-b border-slate-800/80 bg-slate-950/40">
+      <div
+        onClick={onGoToHome}
+        className={`p-4 border-b border-slate-800/80 bg-slate-950/40 ${onGoToHome ? "cursor-pointer hover:bg-slate-900/60 transition-colors" : ""}`}
+        title={onGoToHome ? "Click to view public homepage" : undefined}
+      >
         <MascotLogo size="sm" showTagline={true} />
       </div>
 

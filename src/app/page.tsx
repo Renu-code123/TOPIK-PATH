@@ -21,6 +21,7 @@ import { LogResultModal } from "@/components/pyq/LogResultModal";
 import { TOPIK_I_VOCABULARY } from "@/data/topik-i-vocabulary";
 import { TOPIK_II_VOCABULARY } from "@/data/topik-ii-vocabulary";
 import { ExternalAttemptRecord, INITIAL_SEED_ATTEMPTS } from "@/data/external-resources";
+import { ArrowRight, LayoutDashboard, Sparkles } from "lucide-react";
 
 interface CurrentUser {
   name: string;
@@ -33,6 +34,7 @@ interface CurrentUser {
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showPublicHome, setShowPublicHome] = useState(false);
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard");
   const [selectedTarget, setSelectedTarget] = useState<"ALL" | "TOPIK_I" | "TOPIK_II">("ALL");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -118,17 +120,22 @@ export default function Home() {
     });
   }, [xp, streak, masteredIds, mistakes, mockTestsCompleted, writingsCompleted, quizAttempts, currentUser]);
 
-  const handleAuthSuccess = (user: CurrentUser) => {
+  const handleAuthSuccess = (user: CurrentUser, targetSection?: ActiveSection) => {
     setCurrentUser(user);
     if (user.targetLevel) {
       setSelectedTarget(user.targetLevel as "ALL" | "TOPIK_I" | "TOPIK_II");
     }
     loadUserProgress(user.email);
+    if (targetSection) {
+      setActiveSection(targetSection);
+    }
+    setShowPublicHome(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("topikpath_current_user");
     setCurrentUser(null);
+    setShowPublicHome(false);
     setActiveSection("dashboard");
   };
 
@@ -200,9 +207,25 @@ export default function Home() {
     );
   }
 
-  // Show Landing/Auth if not logged in
-  if (!currentUser) {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  // Show Public Landing/Auth Page if not logged in OR if user clicked "View Homepage"
+  if (!currentUser || showPublicHome) {
+    return (
+      <div className="relative">
+        <AuthPage onAuthSuccess={handleAuthSuccess} />
+        {currentUser && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={() => setShowPublicHome(false)}
+              className="px-5 py-3 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-xs sm:text-sm shadow-2xl shadow-blue-600/50 flex items-center gap-2 border border-white/20 transition-all hover:scale-105 cursor-pointer"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Return to Dashboard ({currentUser.name})</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Authenticated Workspace
@@ -216,6 +239,7 @@ export default function Home() {
           xp={xp}
           streak={streak}
           mistakesCount={mistakes.length}
+          onGoToHome={() => setShowPublicHome(true)}
         />
       </div>
 
@@ -238,6 +262,10 @@ export default function Home() {
               xp={xp}
               streak={streak}
               mistakesCount={mistakes.length}
+              onGoToHome={() => {
+                setShowPublicHome(true);
+                setMobileMenuOpen(false);
+              }}
             />
           </div>
         </div>
@@ -255,6 +283,7 @@ export default function Home() {
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
           userName={currentUser.name}
           onLogout={handleLogout}
+          onGoToHome={() => setShowPublicHome(true)}
         />
 
         {/* Scrollable Viewport */}
