@@ -100,27 +100,82 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   if (mode === "landing") {
     return (
       <div className="min-h-screen bg-[#070a11] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
-        {/* Navbar */}
-        <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[#070a11]/90 border-b border-slate-800/80">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <MascotLogo size="md" showTagline={false} />
-            <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-400">
-              {["Learn", "Practice", "Mock Tests", "Progress", "Community"].map(item => (
-                <span key={item} className="hover:text-white cursor-pointer transition-colors">{item}</span>
+        {/* ── TOP ANNOUNCEMENT BANNER ── */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
+          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+            🌸 NEW 2026 RELEASE
+          </span>
+          <span className="hidden sm:inline">
+            Official 96th TOPIK Previous Papers & Timed Online Mock Tests are now live!
+          </span>
+          <button
+            onClick={() => setMode("signup")}
+            className="underline hover:text-white font-bold ml-1 flex items-center gap-1 cursor-pointer"
+          >
+            <span>Start Practice Free</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* ── ULTRA-COOL GLASSMORPHISM NAVBAR ── */}
+        <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-[#070a11]/85 border-b border-slate-800/80 transition-all">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            {/* Mascot Brand Logo */}
+            <div className="flex items-center gap-4 cursor-pointer" onClick={() => setMode("landing")}>
+              <MascotLogo size="md" showTagline={true} />
+            </div>
+
+            {/* Floating Navigation Island */}
+            <div className="hidden lg:flex items-center gap-1 bg-slate-900/90 border border-slate-800/90 px-3 py-1.5 rounded-full shadow-inner">
+              {[
+                { label: "Vocabulary", badge: "4.3k", icon: "📚", onClick: () => setMode("signup") },
+                { label: "Flashcards", badge: "SM-2", icon: "🎴", onClick: () => setMode("signup") },
+                { label: "PYQs & Mocks", badge: "Live", icon: "📝", onClick: () => setMode("signup") },
+                { label: "Writing Lab", badge: "51-54", icon: "✍️", onClick: () => setMode("signup") },
+                { label: "Grammar Bank", icon: "📘", onClick: () => setMode("signup") },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.onClick}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all flex items-center gap-1.5 group"
+                >
+                  <span className="text-sm group-hover:scale-110 transition-transform">{item.icon}</span>
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
+
+            {/* Right Quick Actions */}
             <div className="flex items-center gap-3">
+              {/* Status Pill */}
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>100% Free</span>
+              </div>
+
+              {/* Login Button */}
               <button
                 onClick={() => setMode("login")}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700 transition-all"
               >
                 Log In
               </button>
+
+              {/* Start Free CTA Button */}
               <button
                 onClick={() => setMode("signup")}
-                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
+                className="relative group overflow-hidden px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#2563EB] via-indigo-600 to-[#8B5CF6] text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105"
               >
-                Start Free
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <span>Start Free</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-pink-500 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
               </button>
             </div>
           </div>
@@ -128,19 +183,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
         {/* Hero Section */}
         <section className="relative overflow-hidden">
-          {/* Atmospheric Blurs */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-20 right-0 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Atmospheric Glowing Orbs */}
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-blue-600/20 to-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-20 right-0 w-[450px] h-[450px] bg-gradient-to-bl from-pink-500/15 to-purple-600/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               {/* Left Text */}
               <div className="lg:col-span-6 space-y-7">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
-                  <span>🌸</span> Official TOPIK I & II Prep Platform
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500/15 via-indigo-500/15 to-purple-500/15 border border-indigo-400/30 text-indigo-300 text-xs font-black shadow-lg">
+                  <span>🌸</span>
+                  <span>Official TOPIK I & TOPIK II Prep Operating System</span>
                 </div>
 
-                <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.05]">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.03]">
                   Your Path to{" "}
                   <br />
                   <span className="bg-gradient-to-r from-[#2563EB] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
@@ -148,27 +204,33 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   </span>
                 </h1>
 
-                <p className="text-sm sm:text-base font-bold text-slate-400 tracking-wider uppercase">
-                  Learn Korean • Practice Smart • Track Progress • Ace TOPIK
+                <p className="text-xs sm:text-sm font-black text-slate-400 tracking-widest uppercase flex items-center gap-2">
+                  <span>Study</span>
+                  <span className="text-indigo-400">•</span>
+                  <span>Practice</span>
+                  <span className="text-indigo-400">•</span>
+                  <span>Master</span>
+                  <span className="text-indigo-400">•</span>
+                  <span className="text-rose-400">Ace Exam</span>
                 </p>
 
                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-lg">
-                  All-in-one platform for TOPIK I & TOPIK II preparation. Master 4,333 official words, 
-                  essential grammar patterns, timed mock tests, and writing tasks with instant feedback.
+                  Master 4,333 official vocabulary words, grammar patterns, real past papers from TOPIK GUIDE, timed mock tests, and writing tasks with automated analytics.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4">
                   <button
                     onClick={() => setMode("signup")}
-                    className="px-7 py-3.5 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center gap-2 transition-all hover:scale-105"
+                    className="px-8 py-4 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-sm shadow-xl shadow-blue-600/30 flex items-center gap-2.5 transition-all hover:scale-105"
                   >
-                    Get Started — It's Free <ArrowRight className="w-4 h-4" />
+                    <span>Get Started — 100% Free</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setMode("login")}
-                    className="px-7 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition-all"
+                    className="px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700 transition-all"
                   >
-                    Already have an account? Log In
+                    Log In to Account
                   </button>
                 </div>
 
