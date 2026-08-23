@@ -70,8 +70,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       // If user doesn't exist, provide a helpful demo fallback or prompt signup
       if (!found) {
         if (users.length === 0) {
-          // Auto create first account for smooth testing
-          const demoUser = { name: email.split("@")[0] || "Learner", email, password, targetLevel, xp: 4280, streak: 21 };
+          // Auto create first account with clean 0 stats
+          const demoUser = { name: email.split("@")[0] || "Learner", email, password, targetLevel, xp: 0, streak: 0 };
           users.push(demoUser);
           localStorage.setItem("topikpath_users", JSON.stringify(users));
           localStorage.setItem("topikpath_current_user", JSON.stringify(demoUser));
@@ -107,7 +107,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         setLoading(false);
         return;
       }
-      const newUser = { name, email, password, targetLevel, xp: 4280, streak: 21 };
+      // New account begins cleanly at 0 XP and 0 Streak
+      const newUser = { name, email, password, targetLevel, xp: 0, streak: 0 };
       users.push(newUser);
       localStorage.setItem("topikpath_users", JSON.stringify(users));
       localStorage.setItem("topikpath_current_user", JSON.stringify(newUser));
@@ -123,32 +124,32 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     return (
       <div className="min-h-screen bg-[#070a11] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
         {/* Top Announcement Bar */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
-          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-            🌸 LATEST RELEASE
+        <div className="bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 border-b border-indigo-500/20 text-slate-200 text-xs font-medium py-2 px-4 text-center flex items-center justify-center gap-2 relative z-50">
+          <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider">
+            🌸 102nd TOPIK
           </span>
           <span className="hidden sm:inline">
-            Official 102nd & 96th TOPIK Previous Papers & Timed Online Mock Tests are live!
+            Official 102nd & 96th TOPIK Previous Question Papers & Timed Mocks are live!
           </span>
           <button
             onClick={() => handleFeatureClick("pyq_hub", "102nd TOPIK Exam Sets")}
-            className="underline hover:text-white font-bold ml-1 flex items-center gap-1 cursor-pointer"
+            className="text-white hover:text-indigo-300 font-bold ml-1 flex items-center gap-1 cursor-pointer underline"
           >
-            <span>Start Practice Free</span>
+            <span>Practice Free</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>
 
-        {/* ── ULTRA-COOL GLASSMORPHISM NAVBAR ── */}
-        <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-[#070a11]/85 border-b border-slate-800/80 transition-all">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            {/* Mascot Brand Logo */}
-            <div className="flex items-center gap-4 cursor-pointer" onClick={() => setMode("landing")}>
+        {/* ── CLEAN, MODERN NAVBAR ── */}
+        <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070a11]/90 border-b border-slate-800/80">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setMode("landing")}>
               <MascotLogo size="md" showTagline={true} />
             </div>
 
-            {/* Interactive Feature Navigation Island */}
-            <div className="hidden lg:flex items-center gap-1 bg-slate-900/90 border border-slate-800/90 px-3 py-1.5 rounded-full shadow-inner">
+            {/* Navigation Links */}
+            <div className="hidden lg:flex items-center gap-1 bg-slate-900/60 border border-slate-800/80 p-1 rounded-2xl">
               {[
                 { label: "Vocabulary", badge: "4.3k", icon: "📚", section: "vocab" as ActiveSection },
                 { label: "Flashcards", badge: "SM-2", icon: "🎴", section: "flashcards" as ActiveSection },
@@ -159,12 +160,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 <button
                   key={item.label}
                   onClick={() => handleFeatureClick(item.section, item.label)}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all flex items-center gap-1.5 group cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span className="text-sm group-hover:scale-110 transition-transform">{item.icon}</span>
+                  <span>{item.icon}</span>
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 font-bold">
                       {item.badge}
                     </span>
                   )}
@@ -172,13 +173,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               ))}
             </div>
 
-            {/* Right Quick Actions */}
+            {/* Right Actions */}
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>100% Free</span>
-              </div>
-
               <button
                 onClick={() => {
                   setTargetDestination("dashboard");
@@ -186,7 +182,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   setMode("login");
                   setError("");
                 }}
-                className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 transition-colors cursor-pointer"
               >
                 Log In
               </button>
@@ -198,17 +194,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   setMode("signup");
                   setError("");
                 }}
-                className="relative group overflow-hidden px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#2563EB] via-indigo-600 to-[#8B5CF6] text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-600/25 flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer"
               >
-                <span className="relative z-10 flex items-center gap-1.5">
-                  <span>Start Free</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-pink-500 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+                <span>Start Free</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
-        </nav>
+        </header>
 
         {/* Hero Section */}
         <section className="relative overflow-hidden">

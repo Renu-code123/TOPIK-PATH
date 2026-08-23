@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Calendar,
   FileCheck,
+  FileText,
 } from "lucide-react";
 import { ActiveSection } from "../navigation/Sidebar";
 import { getLevelFromXp, getNextLevelProgress } from "@/lib/xp";
@@ -49,9 +50,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   userName,
   targetLevel = "TOPIK_I",
 }) => {
+  const isTopik2 = targetLevel === "TOPIK_II";
+  const targetVocabTotal = isTopik2 ? 2662 : 1671;
+  const examMaxScore = isTopik2 ? 300 : 200;
+  const targetThresholdText = isTopik2 ? "Level 4 (150+ pts)" : "Level 2 (140+ pts)";
+
   const currentTier = getLevelFromXp(xp);
   const nextProgress = getNextLevelProgress(xp);
-  const vocabPercent = Math.min(100, Math.round((masteredVocab / (totalVocabCount || 1671)) * 100)) || 1;
+  const vocabPercent = Math.min(100, Math.round((masteredVocab / (targetVocabTotal || 1671)) * 100)) || 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -59,8 +65,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Calculate PYQ analytics
   const analytics = calculatePYQAnalytics(
     attempts,
-    targetLevel === "TOPIK_II" ? "TOPIK_II" : "TOPIK_I",
-    targetLevel === "TOPIK_II" ? 4 : 2
+    isTopik2 ? "TOPIK_II" : "TOPIK_I",
+    isTopik2 ? 4 : 2
   );
 
   const latestAttempt = analytics.sortedAttempts[analytics.sortedAttempts.length - 1];
@@ -74,24 +80,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider">🌸 TOPIKPath Command Center</div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
+              <span>{isTopik2 ? "⭐ TOPIK II Track (Levels 3–6)" : "🌸 TOPIK I Track (Levels 1–2)"}</span>
+              <span>•</span>
+              <span className="text-white">Goal: {targetThresholdText}</span>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">
               {greeting}, <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{userName || "Learner"}</span>! 👋
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Today's recommended mission: Practice with real past papers and boost your score.
+              {isTopik2
+                ? "Prepare for intermediate & advanced Korean. Master 2,662 words, 102nd TOPIK II mocks, and Tasks 51–54 essays."
+                : "Master foundational Korean. Complete 1,671 essential words and practice with official TOPIK I past papers."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => onNavigate("pyq_hub")}
-              className="px-5 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all hover:scale-105"
+              className="px-5 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
             >
               <FileCheck className="w-4 h-4" /> Practice PYQs & Mocks
             </button>
             <button
               onClick={onStartQuickPractice}
-              className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all hover:scale-105"
+              className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
             >
               <Zap className="w-4 h-4" /> Quick Quiz
             </button>
@@ -99,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* ── 2. METRIC COUNTERS & STATS GRID ── */}
+      {/* ── 2. METRIC COUNTERS & STATS GRID (ZERO OR ACTIVE) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
@@ -113,23 +125,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {
             title: "Daily Streak",
             value: `${streak} Days`,
-            sub: "Keep the flame burning",
+            sub: streak > 0 ? "Keep the flame burning" : "Complete a quiz to start",
             icon: Flame,
             color: "text-amber-400",
             bg: "bg-amber-950/20 border-amber-500/20",
           },
           {
-            title: "Known Words",
-            value: `${masteredVocab} / ${totalVocabCount}`,
-            sub: `${vocabPercent}% of total syllabus`,
+            title: isTopik2 ? "TOPIK II Words" : "TOPIK I Words",
+            value: `${masteredVocab} / ${targetVocabTotal}`,
+            sub: `${vocabPercent}% of syllabus mastered`,
             icon: CheckCircle2,
             color: "text-emerald-400",
             bg: "bg-emerald-950/20 border-emerald-500/20",
           },
           {
-            title: "PYQ / Mock Tests",
+            title: "Past Papers & Mocks",
             value: `${analytics.count} Completed`,
-            sub: `Best: ${analytics.bestScore} pts`,
+            sub: analytics.bestScore > 0 ? `Best: ${analytics.bestScore} / ${examMaxScore}` : "Log your first result",
             icon: Award,
             color: "text-blue-400",
             bg: "bg-blue-950/20 border-blue-500/20",
@@ -167,12 +179,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div>
                   <div className="text-[10px] uppercase font-bold text-blue-400">Latest Test Score</div>
                   <h3 className="font-bold text-white text-sm">
-                    {latestAttempt ? latestAttempt.resourceTitle : "96th TOPIK I Mock Test"}
+                    {latestAttempt ? latestAttempt.resourceTitle : (isTopik2 ? "102nd TOPIK II Online Mock" : "102nd TOPIK I Online Mock")}
                   </h3>
                 </div>
               </div>
 
-              {analytics.improvement !== 0 && (
+              {latestAttempt && analytics.improvement !== 0 && (
                 <span className={`text-xs px-2 py-0.5 rounded-lg font-bold ${analytics.improvement > 0 ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"}`}>
                   {analytics.improvement > 0 ? `+${analytics.improvement}` : analytics.improvement} pts
                 </span>
@@ -209,8 +221,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="p-6 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-2">
-                <p className="text-xs text-slate-400">No previous test logged yet.</p>
+              <div className="p-6 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-xl">
+                  🎯
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-white">No attempts recorded yet</p>
+                  <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                    Take the {isTopik2 ? "102nd TOPIK II" : "102nd TOPIK I"} test on TOPIK GUIDE and log your score to view real-time diagnostics.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -218,9 +238,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="pt-2">
             <button
               onClick={() => onNavigate("pyq_hub")}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <span>View All Past Scores & Analytics</span>
+              <span>{latestAttempt ? "View Past Scores & Progression" : "Explore Previous Papers"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -234,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 🎯
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold text-amber-400">Next Target Challenge</div>
+                <div className="text-[10px] uppercase font-bold text-amber-400">Next Recommended Exam</div>
                 <h3 className="font-bold text-white text-sm">{nextChallenge.title}</h3>
               </div>
             </div>
@@ -245,10 +265,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </p>
               <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1">
                 <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300 font-semibold">
-                  ⏱️ {nextChallenge.timeLimitMins || 100} Mins
+                  ⏱️ {nextChallenge.timeLimitMins || (isTopik2 ? 180 : 100)} Mins
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300 font-semibold">
-                  📝 {nextChallenge.questionCount || 70} Questions
+                  📝 {nextChallenge.questionCount || (isTopik2 ? 104 : 70)} Questions
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold">
                   +150 XP
@@ -262,14 +282,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               href={nextChallenge.externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-2.5 px-3 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all hover:scale-102"
+              className="flex-1 py-2.5 px-3 rounded-xl bg-[#2563EB] hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer"
             >
               <span>Practice on TOPIK GUIDE</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <button
               onClick={() => onNavigate("pyq_hub")}
-              className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-colors"
+              className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-colors cursor-pointer"
             >
               Log Result
             </button>
@@ -277,72 +297,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. RECENT ACTIVITY FEED ── */}
-      <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span>Recent Activity & Achievements</span>
-          </h2>
-          <span className="text-xs text-slate-400">Live feed</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            {
-              title: "Completed 96th TOPIK I Mock",
-              time: "Today",
-              xp: "+100 XP",
-              icon: "📝",
-              color: "text-blue-400",
-            },
-            {
-              title: "Mastered 20 Vocabulary Words",
-              time: "Yesterday",
-              xp: "+100 XP",
-              icon: "📚",
-              color: "text-emerald-400",
-            },
-            {
-              title: "Completed Grammar Challenge",
-              time: "2 days ago",
-              xp: "+50 XP",
-              icon: "📘",
-              color: "text-purple-400",
-            },
-            {
-              title: "Completed 91st TOPIK I PYQ",
-              time: "5 days ago",
-              xp: "+100 XP",
-              icon: "⏱️",
-              color: "text-amber-400",
-            },
-          ].map((act, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start gap-3"
-            >
-              <div className="text-xl mt-0.5">{act.icon}</div>
-              <div className="space-y-0.5">
-                <div className="text-xs font-bold text-white">{act.title}</div>
-                <div className="text-[10px] text-slate-500">{act.time}</div>
-                <div className="text-[11px] font-mono font-bold text-indigo-400">{act.xp}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 5. CORE PREPARATION TRACKS ── */}
+      {/* ── 4. DYNAMIC PREPARATION TRACKS (ADAPTED TO LEVEL) ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-400" /> TOPIK Preparation Tracks
+            <Target className="w-5 h-5 text-indigo-400" />
+            <span>{isTopik2 ? "TOPIK II Core Learning Tracks" : "TOPIK I Core Learning Tracks"}</span>
           </h2>
+          <span className="text-xs text-indigo-400 font-semibold">
+            {isTopik2 ? "Intermediate & Advanced Level 3–6" : "Beginner Level 1–2"}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Track 1: Vocab & Flashcards */}
+          {/* Track 1: Vocab Studio */}
           <div
             onClick={() => onNavigate("vocab")}
             className="group cursor-pointer p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/60 hover:bg-slate-850 transition-all space-y-4 flex flex-col justify-between"
@@ -352,19 +320,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 📚
               </div>
               <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
-                Vocabulary Studio
+                {isTopik2 ? "TOPIK II Vocabulary (2,662 Words)" : "TOPIK I Vocabulary (1,671 Words)"}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Explore 1,671+ TOPIK I & 2,662+ TOPIK II categorized words with native speech audio, romanization, and example sentences.
+                {isTopik2
+                  ? "Explore all 2,662 official intermediate and advanced words with audio, romanization, and academic examples."
+                  : "Master all 1,671 official beginner words in serial order with native audio and example sentences."}
               </p>
             </div>
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
-              <span>Launch Studio</span>
+              <span>Launch Vocab Studio</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Track 2: Practice & Mock Tests */}
+          {/* Track 2: PYQs & Mocks */}
           <div
             onClick={() => onNavigate("pyq_hub")}
             className="group cursor-pointer p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-sky-500/60 hover:bg-slate-850 transition-all space-y-4 flex flex-col justify-between"
@@ -374,10 +344,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 📝
               </div>
               <h3 className="text-lg font-bold text-white group-hover:text-sky-300 transition-colors">
-                PYQs & Mock Hub
+                {isTopik2 ? "TOPIK II PYQs & Timed Mocks" : "TOPIK I PYQs & Timed Mocks"}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Practice 12+ official past papers on TOPIK GUIDE. Log your scores, review detailed section analysis, and bridge weak areas.
+                Practice 102nd, 96th, 91st past papers on TOPIK GUIDE. Log scores, review section diagnostics, and bridge weak areas.
               </p>
             </div>
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-sky-400 group-hover:translate-x-1 transition-transform">
@@ -386,27 +356,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Track 3: Writing Lab */}
-          <div
-            onClick={() => onNavigate("writing")}
-            className="group cursor-pointer p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/60 hover:bg-slate-850 transition-all space-y-4 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform text-xl">
-                ✍️
+          {/* Track 3: Writing Lab (TOPIK II) OR Grammar Explorer (TOPIK I) */}
+          {isTopik2 ? (
+            <div
+              onClick={() => onNavigate("writing")}
+              className="group cursor-pointer p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/60 hover:bg-slate-850 transition-all space-y-4 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform text-xl">
+                  ✍️
+                </div>
+                <h3 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
+                  Writing Lab (Tasks 51–54)
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Dedicated TOPIK II writing studio: short cloze completions (51-52), 300-word graph essays (53), and 700-word argumentative essays (54).
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
-                Writing Lab (Tasks 51–54)
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Practice official short sentence completion, graph analysis essays, and 700-character argument compositions.
-              </p>
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-purple-400 group-hover:translate-x-1 transition-transform">
+                <span>Enter Writing Lab</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
             </div>
-            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-purple-400 group-hover:translate-x-1 transition-transform">
-              <span>Enter Writing Lab</span>
-              <ArrowRight className="w-4 h-4" />
+          ) : (
+            <div
+              onClick={() => onNavigate("grammar")}
+              className="group cursor-pointer p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-850 transition-all space-y-4 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform text-xl">
+                  📘
+                </div>
+                <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  TOPIK I Grammar & Listening
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Master core beginner sentence patterns, verb conjugations, particles, and listening dialogue structures.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                <span>Explore Grammar Patterns</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

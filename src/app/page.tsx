@@ -39,17 +39,17 @@ export default function Home() {
   const [selectedTarget, setSelectedTarget] = useState<"ALL" | "TOPIK_I" | "TOPIK_II">("ALL");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Persistent User Progress State
-  const [xp, setXp] = useState<number>(4280);
-  const [streak, setStreak] = useState<number>(21);
-  const [masteredIds, setMasteredIds] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+  // Clean initial state for new learners (zero state)
+  const [xp, setXp] = useState<number>(0);
+  const [streak, setStreak] = useState<number>(0);
+  const [masteredIds, setMasteredIds] = useState<number[]>([]);
   const [mistakes, setMistakes] = useState<MistakeItem[]>([]);
-  const [mockTestsCompleted, setMockTestsCompleted] = useState<number>(3);
-  const [writingsCompleted, setWritingsCompleted] = useState<number>(1);
-  const [quizAttempts, setQuizAttempts] = useState<number>(24);
+  const [mockTestsCompleted, setMockTestsCompleted] = useState<number>(0);
+  const [writingsCompleted, setWritingsCompleted] = useState<number>(0);
+  const [quizAttempts, setQuizAttempts] = useState<number>(0);
 
-  // External PYQ & Mock Attempts State
-  const [attempts, setAttempts] = useState<ExternalAttemptRecord[]>(INITIAL_SEED_ATTEMPTS);
+  // External PYQ & Mock Attempts State (User's own recorded attempts)
+  const [attempts, setAttempts] = useState<ExternalAttemptRecord[]>([]);
   const [isGlobalLogModalOpen, setIsGlobalLogModalOpen] = useState(false);
 
   // Check for existing session on mount
@@ -59,6 +59,9 @@ export default function Home() {
       if (storedUser) {
         const parsed: CurrentUser = JSON.parse(storedUser);
         setCurrentUser(parsed);
+        if (parsed.targetLevel) {
+          setSelectedTarget(parsed.targetLevel as "ALL" | "TOPIK_I" | "TOPIK_II");
+        }
         loadUserProgress(parsed.email);
       }
     } catch (e) {
@@ -74,13 +77,21 @@ export default function Home() {
       const saved = localStorage.getItem(key);
       if (saved) {
         const progress = JSON.parse(saved);
-        if (progress.xp !== undefined) setXp(progress.xp);
-        if (progress.streak !== undefined) setStreak(progress.streak);
-        if (progress.masteredIds) setMasteredIds(progress.masteredIds);
-        if (progress.mistakes) setMistakes(progress.mistakes);
-        if (progress.mockTestsCompleted !== undefined) setMockTestsCompleted(progress.mockTestsCompleted);
-        if (progress.writingsCompleted !== undefined) setWritingsCompleted(progress.writingsCompleted);
-        if (progress.quizAttempts !== undefined) setQuizAttempts(progress.quizAttempts);
+        setXp(progress.xp || 0);
+        setStreak(progress.streak || 0);
+        setMasteredIds(progress.masteredIds || []);
+        setMistakes(progress.mistakes || []);
+        setMockTestsCompleted(progress.mockTestsCompleted || 0);
+        setWritingsCompleted(progress.writingsCompleted || 0);
+        setQuizAttempts(progress.quizAttempts || 0);
+      } else {
+        setXp(0);
+        setStreak(0);
+        setMasteredIds([]);
+        setMistakes([]);
+        setMockTestsCompleted(0);
+        setWritingsCompleted(0);
+        setQuizAttempts(0);
       }
 
       // Load attempts
@@ -88,6 +99,8 @@ export default function Home() {
       const savedAttempts = localStorage.getItem(attemptKey);
       if (savedAttempts) {
         setAttempts(JSON.parse(savedAttempts));
+      } else {
+        setAttempts([]);
       }
     } catch (e) {}
   };

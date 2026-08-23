@@ -59,12 +59,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const [activeReportTab, setActiveReportTab] = useState<"weekly" | "monthly">("weekly");
 
-  // Overall Skill Percentages
-  const vocabPct = Math.round((masteredVocabCount / (totalVocabCount || 1671)) * 100) || 61;
-  const grammarPct = 57;
-  const listeningPct = analytics.sections.find((s) => s.section === "LISTENING")?.percentage || 82;
-  const readingPct = analytics.sections.find((s) => s.section === "READING")?.percentage || 78;
-  const writingPct = isTopik2 ? analytics.sections.find((s) => s.section === "WRITING")?.percentage || 52 : undefined;
+  // Overall Skill Percentages (Strictly dynamic with 0 default)
+  const targetSyllabusTotal = isTopik2 ? 2662 : 1671;
+  const vocabPct = Math.min(100, Math.round((masteredVocabCount / targetSyllabusTotal) * 100)) || 0;
+  const grammarPct = 0;
+  const listeningPct = analytics.sections.find((s) => s.section === "LISTENING")?.percentage || 0;
+  const readingPct = analytics.sections.find((s) => s.section === "READING")?.percentage || 0;
+  const writingPct = isTopik2 ? (analytics.sections.find((s) => s.section === "WRITING")?.percentage || 0) : undefined;
 
   return (
     <div className="space-y-10 animate-fade-in">
@@ -323,16 +324,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {[
-            { label: "Total Study Time", value: "42h 18m", icon: "⏳", color: "text-blue-400" },
-            { label: "Questions Solved", value: "2,481", icon: "✍️", color: "text-purple-400" },
-            { label: "Vocabulary Mastered", value: `${masteredVocabCount} / ${totalVocabCount || 1671}`, icon: "📚", color: "text-emerald-400" },
-            { label: "Grammar Mastered", value: "86 / 150", icon: "📘", color: "text-sky-400" },
+            { label: "Total Study Time", value: streak > 0 ? `${streak * 25}m` : "0m", icon: "⏳", color: "text-blue-400" },
+            { label: "Questions Solved", value: `${analytics.count * (isTopik2 ? 104 : 70)}`, icon: "✍️", color: "text-purple-400" },
+            { label: isTopik2 ? "TOPIK II Vocab" : "TOPIK I Vocab", value: `${masteredVocabCount} / ${targetSyllabusTotal}`, icon: "📚", color: "text-emerald-400" },
+            { label: "Grammar Mastered", value: "0 / 150", icon: "📘", color: "text-sky-400" },
             { label: "PYQs Completed", value: `${analytics.count}`, icon: "📝", color: "text-amber-400" },
             { label: "Mock Tests Done", value: `${analytics.count}`, icon: "⏱️", color: "text-pink-400" },
             { label: "Average Score", value: `${analytics.averageScore} / ${isTopik2 ? 300 : 200}`, icon: "📊", color: "text-indigo-400" },
             { label: "Personal Best", value: `${analytics.bestScore} / ${isTopik2 ? 300 : 200}`, icon: "🏆", color: "text-emerald-400" },
-            { label: "Current Streak", value: `${streak || 21} Days`, icon: "🔥", color: "text-amber-400" },
-            { label: "Overall Accuracy", value: "88%", icon: "🎯", color: "text-teal-400" },
+            { label: "Current Streak", value: `${streak} Days`, icon: "🔥", color: "text-amber-400" },
+            { label: "Overall Accuracy", value: analytics.averageScore > 0 ? `${Math.round((analytics.averageScore / (isTopik2 ? 300 : 200)) * 100)}%` : "0%", icon: "🎯", color: "text-teal-400" },
           ].map((card) => (
             <div
               key={card.label}
